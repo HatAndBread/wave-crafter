@@ -11,16 +11,16 @@ var Wave = /** @class */ (function () {
             var ascending = true;
             for (var i = 0; i < _this.length; i++) {
                 var sampleTime = (i + _this.startAmplitude) / 44100;
-                var triangleSampleAngle = 4 / (44100 / _this.frequency);
+                var triangleSampleAngle = (4 * _this.maxAmplitude) / (44100 / _this.frequency);
                 var sawSampleAngle = triangleSampleAngle / 2;
                 var sineSampleAngle = sampleTime * _this.getAngularFrequency();
                 var triangleAmplitude = void 0;
                 var sawAmplitude = void 0;
-                if (ascending && previousTriangleAmplitude + triangleSampleAngle > 1) {
+                if (ascending && previousTriangleAmplitude + triangleSampleAngle > _this.maxAmplitude) {
                     triangleAmplitude = previousTriangleAmplitude - triangleSampleAngle;
                     ascending = false;
                 }
-                else if (!ascending && previousTriangleAmplitude - triangleSampleAngle < -1) {
+                else if (!ascending && previousTriangleAmplitude - triangleSampleAngle < -_this.maxAmplitude) {
                     triangleAmplitude = previousTriangleAmplitude + triangleSampleAngle;
                     ascending = true;
                 }
@@ -30,13 +30,13 @@ var Wave = /** @class */ (function () {
                 else {
                     triangleAmplitude = previousTriangleAmplitude - triangleSampleAngle;
                 }
-                if (previousSawAmplitude + sawSampleAngle > 1) {
+                if (previousSawAmplitude + sawSampleAngle > _this.maxAmplitude) {
                     sawAmplitude = -previousSawAmplitude;
                 }
                 else {
                     sawAmplitude = previousSawAmplitude + sawSampleAngle;
                 }
-                var sineAmplitude = Math.sin(sineSampleAngle);
+                var sineAmplitude = Math.sin(sineSampleAngle) * _this.maxAmplitude;
                 arr[i] = _this.callback({
                     setFrequency: _this.setFrequency,
                     iteration: i,
@@ -51,6 +51,7 @@ var Wave = /** @class */ (function () {
                     sawAmplitude: sawAmplitude,
                     sineAmplitude: sineAmplitude,
                     userValues: _this.userValues,
+                    maxAmplitude: _this.maxAmplitude,
                 });
                 previousSawAmplitude = sawAmplitude;
                 previousTriangleAmplitude += ascending ? triangleSampleAngle : -triangleSampleAngle;
@@ -61,6 +62,7 @@ var Wave = /** @class */ (function () {
         this.length = args.length;
         this.frequency = args.frequency || 440;
         this.startAmplitude = args.startAmplitude || 0;
+        this.maxAmplitude = args.maxAmplitude || 1;
         this.callback = args.callback ? args.callback : function () { return randomInRange(-1, 1); };
         this.userValues = args.values;
     }

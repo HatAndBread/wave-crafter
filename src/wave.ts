@@ -10,6 +10,7 @@ type callbackParams = {
   previousTriangleAmplitude: number;
   previousSawAmplitude: number;
   previousSineAmplitude: number;
+  maxAmplitude: number;
   setFrequency: (num: number) => any;
   userValues: { [key: string]: any } | undefined;
 };
@@ -17,6 +18,7 @@ type waveArgs = {
   length: number;
   frequency?: number;
   startAmplitude?: number;
+  maxAmplitude?: number;
   callback?: (params: callbackParams) => number;
   values?: { [key: string]: any };
 };
@@ -26,11 +28,13 @@ class Wave {
   frequency: number;
   startAmplitude: number;
   userValues?: { [key: string]: any };
+  maxAmplitude: number;
   callback: (params: callbackParams) => any;
   constructor(args: waveArgs) {
     this.length = args.length;
     this.frequency = args.frequency || 440;
     this.startAmplitude = args.startAmplitude || 0;
+    this.maxAmplitude = args.maxAmplitude || 1;
     this.callback = args.callback ? args.callback : () => randomInRange(-1, 1);
     this.userValues = args.values;
   }
@@ -44,15 +48,15 @@ class Wave {
     let ascending = true;
     for (let i = 0; i < this.length; i++) {
       const sampleTime = (i + this.startAmplitude) / 44100;
-      const triangleSampleAngle = 4 / (44100 / this.frequency);
+      const triangleSampleAngle = (4 * this.maxAmplitude) / (44100 / this.frequency);
       const sawSampleAngle = triangleSampleAngle / 2;
       let sineSampleAngle = sampleTime * this.getAngularFrequency();
       let triangleAmplitude;
       let sawAmplitude;
-      if (ascending && previousTriangleAmplitude + triangleSampleAngle > 1) {
+      if (ascending && previousTriangleAmplitude + triangleSampleAngle > this.maxAmplitude) {
         triangleAmplitude = previousTriangleAmplitude - triangleSampleAngle;
         ascending = false;
-      } else if (!ascending && previousTriangleAmplitude - triangleSampleAngle < -1) {
+      } else if (!ascending && previousTriangleAmplitude - triangleSampleAngle < -this.maxAmplitude) {
         triangleAmplitude = previousTriangleAmplitude + triangleSampleAngle;
         ascending = true;
       } else if (ascending) {
@@ -60,12 +64,12 @@ class Wave {
       } else {
         triangleAmplitude = previousTriangleAmplitude - triangleSampleAngle;
       }
-      if (previousSawAmplitude + sawSampleAngle > 1) {
+      if (previousSawAmplitude + sawSampleAngle > this.maxAmplitude) {
         sawAmplitude = -previousSawAmplitude;
       } else {
         sawAmplitude = previousSawAmplitude + sawSampleAngle;
       }
-      const sineAmplitude = Math.sin(sineSampleAngle);
+      const sineAmplitude = Math.sin(sineSampleAngle) * this.maxAmplitude;
       arr[i] = this.callback({
         setFrequency: this.setFrequency,
         iteration: i,
@@ -80,6 +84,7 @@ class Wave {
         sawAmplitude,
         sineAmplitude,
         userValues: this.userValues,
+        maxAmplitude: this.maxAmplitude,
       });
       previousSawAmplitude = sawAmplitude;
       previousTriangleAmplitude += ascending ? triangleSampleAngle : -triangleSampleAngle;

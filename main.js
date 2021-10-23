@@ -7,11 +7,13 @@ const players = [];
 
 const createWave = (callback, playerNum) => {
   const wave = new Wave({
-    length: 4000000,
+    length: 1000000,
     callback: callback,
+    maxAmplitude: 0.1,
     values: { stuff: 1 },
   });
   const arr = wave.createArray();
+  console.log(arr);
   const buffer = new Tone.ToneAudioBuffer().fromArray(arr);
   players[playerNum].buffer = buffer;
   players[playerNum].start();
@@ -20,8 +22,8 @@ btn.addEventListener('click', () => {
   if (audioContextIsReady) {
     createWave((p) => {
       const negative = () => [-1, 1][Math.floor(Math.random() * 2)];
-      p.setFrequency(p.frequency + 0.02 * negative());
-      return p.triangleAmplitude;
+      // p.setFrequency(p.frequency + 0.02 * negative());
+      return p.sineAmplitude;
     }, 0);
   } else {
     audioContextIsReady = true;
@@ -37,7 +39,7 @@ snd2.addEventListener('click', () => {
     createWave((p) => {
       const negative = () => [-1, 1][Math.floor(Math.random() * 2)];
       p.setFrequency(p.frequency + 0.02 * negative());
-      return p.sawAmplitude;
+      return p.triangleAmplitude;
     }, 1);
   }
 });
