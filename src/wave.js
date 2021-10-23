@@ -1,24 +1,68 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var tone_1 = require("tone");
 var Wave = /** @class */ (function () {
     function Wave(args) {
         var _this = this;
+        this.getAngularFrequency = function () { return _this.frequency * 2 * Math.PI; };
+        this.setFrequency = function (num) { return (_this.frequency = num); };
         this.createArray = function () {
             var arr = new Float32Array(_this.length);
-            var frequency = randomIntInRange(30, 1000);
-            var angularFrequency = frequency * 2 * Math.PI;
+            var previousTriangleAmplitude = _this.startAmplitude;
+            var previousSawAmplitude = _this.startAmplitude;
+            var previousSineAmplitude = _this.startAmplitude;
+            var ascending = true;
             for (var i = 0; i < _this.length; i++) {
-                var sampleTime = i / 44100;
-                var sampleAngle = sampleTime * angularFrequency;
-                sampleAngle += randomInRange(-0.1, 0.1);
-                arr[i] = Math.sin(sampleAngle);
+                var sampleTime = (i + _this.startAmplitude) / 44100;
+                var triangleSampleAngle = 4 / (44100 / _this.frequency);
+                var sawSampleAngle = triangleSampleAngle / 2;
+                var sineSampleAngle = sampleTime * _this.getAngularFrequency();
+                var triangleAmplitude = void 0;
+                var sawAmplitude = void 0;
+                if (ascending && previousTriangleAmplitude + triangleSampleAngle > 1) {
+                    triangleAmplitude = previousTriangleAmplitude - triangleSampleAngle;
+                    ascending = false;
+                }
+                else if (!ascending && previousTriangleAmplitude - triangleSampleAngle < -1) {
+                    triangleAmplitude = previousTriangleAmplitude + triangleSampleAngle;
+                    ascending = true;
+                }
+                else if (ascending) {
+                    triangleAmplitude = previousTriangleAmplitude + triangleSampleAngle;
+                }
+                else {
+                    triangleAmplitude = previousTriangleAmplitude - triangleSampleAngle;
+                }
+                if (previousSawAmplitude + sawSampleAngle > 1) {
+                    sawAmplitude = -previousSawAmplitude;
+                }
+                else {
+                    sawAmplitude = previousSawAmplitude + sawSampleAngle;
+                }
+                var sineAmplitude = Math.sin(sineSampleAngle);
+                arr[i] = _this.callback({
+                    setFrequency: _this.setFrequency,
+                    iteration: i,
+                    frequency: _this.frequency,
+                    length: _this.length,
+                    sampleTime: sampleTime,
+                    sineSampleAngle: sineSampleAngle,
+                    previousTriangleAmplitude: previousTriangleAmplitude,
+                    previousSawAmplitude: previousSawAmplitude,
+                    previousSineAmplitude: previousSineAmplitude,
+                    triangleAmplitude: triangleAmplitude,
+                    sawAmplitude: sawAmplitude,
+                    sineAmplitude: sineAmplitude,
+                    userValues: _this.userValues,
+                });
+                previousSawAmplitude = sawAmplitude;
+                previousTriangleAmplitude += ascending ? triangleSampleAngle : -triangleSampleAngle;
+                previousSineAmplitude = sineAmplitude;
             }
             return arr;
         };
-        this.createAudioBuffer = function (f32arr) { return new tone_1.ToneAudioBuffer().fromArray(f32arr); };
-        this.getAudioBuffer = function () { return _this.createAudioBuffer(_this.createArray()); };
         this.length = args.length;
+        this.frequency = args.frequency || 440;
+        this.startAmplitude = args.startAmplitude || 0;
+        this.callback = args.callback ? args.callback : function () { return randomInRange(-1, 1); };
+        this.userValues = args.values;
     }
     return Wave;
 }());
@@ -32,4 +76,4 @@ var repeat = function (howManyTimes, callback) {
         }
     };
 };
-exports.default = Wave;
+export default Wave;

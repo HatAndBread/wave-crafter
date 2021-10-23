@@ -1,5 +1,12 @@
 import Wave from './src/wave';
 
-const a = new Wave({ length: 2000 });
+const a = new Wave({
+  length: 2000,
+  callback: (params) => {
+    console.log(params);
+    return params.iteration;
+  },
+  values: { stuff: 1 },
+});
 
-console.log(a.createArray());
+a.createArray();
